@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"testing"
 
+	"github.com/k0kubun/pp/v3"
 	"github.com/k0kubun/sqldef/database"
 	"github.com/k0kubun/sqldef/parser"
 	"github.com/stretchr/testify/assert"
@@ -34,6 +35,9 @@ func TestParse(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+
+			pp.Println("genericResult", genericResult)
+			pp.Println("psqlResult", psqlResult)
 
 			assert.Equal(t, genericResult, psqlResult)
 		})

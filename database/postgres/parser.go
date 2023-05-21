@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/k0kubun/pp/v3"
 	"github.com/k0kubun/sqldef/database"
 	"github.com/k0kubun/sqldef/parser"
 	pgquery "github.com/pganalyze/pg_query_go/v2"
@@ -587,6 +588,14 @@ func (p PostgresParser) parseColumnDef(columnDef *pgquery.ColumnDef) (*parser.Co
 		switch constraint.Contype {
 		case pgquery.ConstrType_CONSTR_NOTNULL:
 			columnType.NotNull = parser.NewBoolVal(true)
+		case pgquery.ConstrType_CONSTR_DEFAULT:
+			pp.Println(constraint.Contype)
+			columnType.Default = &parser.DefaultDefinition{
+				Value: &parser.SQLVal{
+					Type: parser.StrVal,
+					// Val:  []byte(constraint.RawExpr),
+				},
+			}
 		default:
 			return nil, fmt.Errorf("unhandled contype: %d", constraint.Contype)
 		}

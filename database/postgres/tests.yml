@@ -17,6 +17,31 @@ CreateTableWithNotNull:
       code character varying(512),
       booking_id bigint NOT NULL
     );
+CreateTableWithDefault:
+  compare_with_generic_parser: true
+  sql: |
+    CREATE TABLE bigdata (
+      data integer default 1
+    );
+CreateTableWith_Default:
+  compare_with_generic_parser: true
+  sql: |
+    CREATE TABLE users (
+      profile character varying(50) NOT NULL DEFAULT ''::character varying,
+      default_int int default 20,
+      default_bool bool default true,
+      default_numeric numeric(5) default 42.195,
+      default_fixed_char character(3) default 'JPN'::bpchar,
+      default_text text default ''::text,
+      default_json json default '[]'::json,
+      default_jsonb jsonb default '[]'::jsonb,
+      default_current_timestamp timestamp default CURRENT_TIMESTAMP,
+      default_current_date date default CURRENT_DATE,
+      default_current_time time default CURRENT_TIME,
+      default_array_int int[] default '{}'::int[],
+      joined_at timestamp with time zone NOT NULL DEFAULT '0001-01-01 00:00:00'::timestamp without time zone,
+      created_at timestamp with time zone DEFAULT now()
+    );
 CreateView:
   compare_with_generic_parser: true
   sql: |
