@@ -528,10 +528,28 @@ func (p PostgresParser) parseExpr(stmt *pgquery.Node) (parser.Expr, error) {
 		if err != nil {
 			return nil, err
 		}
-		if columnType.Type == "integer" || columnType.Type == "bigint" || columnType.Type == "numeric" || columnType.Type == "double precision" {
-			return &parser.CollateExpr{ // compatibility with the legacy parser, but there'd be a better node
-				Expr: expr,
-			}, nil
+		if columnType.Type == "integer" ||
+			columnType.Type == "bigint" ||
+			columnType.Type == "smallint" ||
+			columnType.Type == "numeric" ||
+			columnType.Type == "real" ||
+			columnType.Type == "double precision" {
+			switch node.TypeCast.Arg.Node.(type) {
+			case *pgquery.Node_AConst:
+				return &parser.CastExpr{
+					Type: &parser.ConvertType{
+						Type:    columnType.Type,
+						Length:  columnType.Length,
+						Scale:   columnType.Scale,
+						Charset: columnType.Charset,
+					},
+					Expr: expr,
+				}, nil
+			default:
+				return &parser.CollateExpr{
+					Expr: expr,
+				}, nil
+			}
 		} else {
 			switch node.TypeCast.Arg.Node.(type) {
 			case *pgquery.Node_AConst:
@@ -580,6 +598,8 @@ func (p PostgresParser) parseExpr(stmt *pgquery.Node) (parser.Expr, error) {
 		switch node.AExpr.Kind {
 		case
 			pgquery.A_Expr_Kind_AEXPR_OP,
+			pgquery.A_Expr_Kind_AEXPR_OP_ALL,
+			pgquery.A_Expr_Kind_AEXPR_OP_ANY,
 			pgquery.A_Expr_Kind_AEXPR_LIKE,
 			pgquery.A_Expr_Kind_AEXPR_ILIKE,
 			pgquery.A_Expr_Kind_AEXPR_SIMILAR:
@@ -921,6 +941,23 @@ func (p PostgresParser) parseDefaultValue(rawExpr *pgquery.Node) (*parser.Defaul
 				Expr: expr,
 			},
 		}, nil
+	case *parser.CastExpr:
+		switch expr := expr.Expr.(type) {
+		case *parser.SQLVal:
+			return &parser.DefaultDefinition{
+				ValueOrExpression: parser.DefaultValueOrExpression{
+					Value: expr,
+				},
+			}, nil
+		case *parser.ArrayConstructor:
+			return &parser.DefaultDefinition{
+				ValueOrExpression: parser.DefaultValueOrExpression{
+					Expr: expr,
+				},
+			}, nil
+		default:
+			return nil, fmt.Errorf("unhandled default CastExpr node: %#v", expr)
+		}
 	case *parser.CollateExpr:
 		switch expr := expr.Expr.(type) {
 		case *parser.SQLVal:
@@ -973,15 +1010,21 @@ func (p PostgresParser) parseTypeName(node *pgquery.TypeName) (parser.ColumnType
 	} else if len(typeNames) == 2 {
 		if typeNames[0] == "pg_catalog" {
 			switch typeNames[1] {
+			case "int2":
+				columnType.Type = "smallint"
 			case "int4":
 				columnType.Type = "integer"
 			case "int8":
 				columnType.Type = "bigint"
+			case "float4":
+				columnType.Type = "real"
 			case "float8":
 				columnType.Type = "double precision"
+			case "bool":
+				columnType.Type = "boolean"
 			case "bpchar":
 				columnType.Type = "character"
-			case "bool", "varchar", "interval", "numeric", "timestamp", "time": // TODO: use this pattern more, fixing failed tests as well
+			case "boolean", "varchar", "interval", "numeric", "timestamp", "time": // TODO: use this pattern more, fixing failed tests as well
 				columnType.Type = typeNames[1]
 			case "timetz":
 				columnType.Type = "time"

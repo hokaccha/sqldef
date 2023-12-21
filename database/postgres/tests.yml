@@ -1,3 +1,43 @@
+TestCasting2:
+  compare_with_generic_parser: true
+  sql: |
+    create view hoge_view as
+    select
+      'a'::bool,
+      'a'::boolean,
+      -- '1'::samllint,
+      -- '1'::integer,
+      -- '1'::bigint,
+      -- '1'::real,
+      -- '1'::double precision,
+      '1'::numeric as n,
+      -- ''::text,
+      '2022-01-01'::date
+    from hoge;
+TestCasting:
+  compare_with_generic_parser: true
+  sql: |
+    create view hoge_view as
+    select
+      b::bool,
+      b2::boolean,
+      s::smallint,
+      i::integer,
+      bi::bigint,
+      r::real,
+      d::double precision,
+      n::numeric,
+      t::text,
+      -- v::varchar,
+      -- c::char,
+      dt::date,
+      -- ti::time,
+      -- tiz::time with time zone,
+      -- ts::timestamp,
+      -- tsz::timestamp with time zone,
+      -- iv::interval,
+      uu::uuid
+    from hoge;
 CreateTable:
   compare_with_generic_parser: true
   sql: |
@@ -73,12 +113,12 @@ CheckConstraint:
   compare_with_generic_parser: true
   sql: |
     CREATE TABLE test (
-      v varchar(10) CHECK (v::text ~ '[0-9]'::text)
-      -- price integer CHECK (price = 0 OR NOT price <= '-1'::integer AND price IS NULL)
-      -- min_value integer CONSTRAINT test_min_value_check CHECK (min_value > 0),
-      -- max_value integer CHECK (max_value > 0) NO INHERIT,
-      -- quantity integer,
-      -- CONSTRAINT chk CHECK (quantity > 0 AND price > 0)
+      v varchar(10) CHECK (v::text ~ '[0-9]'::text),
+      price integer CHECK (price = 0 OR NOT price <= -1 AND price IS NULL),
+      min_value integer CONSTRAINT test_min_value_check CHECK (min_value > 0),
+      max_value integer CHECK (max_value > 0) NO INHERIT,
+      quantity integer,
+      CONSTRAINT chk CHECK (quantity > 0 AND price > 0)
     );
 CheckConstraintBetween:
   compare_with_generic_parser: true
@@ -104,7 +144,9 @@ CheckConstraintWithoutCompare:
       t3 text CHECK (t3 similar to 'x'),
       t4 text CHECK (t4 <> ''::text),
       d3 date CHECK (d3 BETWEEN SYMMETRIC '1900-01-01' AND '2000-01-01'),
-      d4 date CHECK (d4 NOT BETWEEN SYMMETRIC '1900-01-01'::date AND '2000-01-01'::date)
+      d4 date CHECK (d4 NOT BETWEEN SYMMETRIC '1900-01-01'::date AND '2000-01-01'::date),
+      num1 integer CHECK (num1 = ANY (ARRAY[1, 2])),
+      num2 integer CHECK (num2 = ALL (ARRAY[1, 2]))
     );
 CreateView:
   compare_with_generic_parser: true
