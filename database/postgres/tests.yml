@@ -73,11 +73,12 @@ CheckConstraint:
   compare_with_generic_parser: true
   sql: |
     CREATE TABLE test (
-      price integer CHECK (price = 0 OR NOT price <= '-1'::integer AND price IS NULL),
-      min_value integer CONSTRAINT test_min_value_check CHECK (min_value > 0),
-      max_value integer CHECK (max_value > 0) NO INHERIT,
-      quantity integer,
-      CONSTRAINT chk CHECK (quantity > 0 AND price > 0)
+      v varchar(10) CHECK (v::text ~ '[0-9]'::text)
+      -- price integer CHECK (price = 0 OR NOT price <= '-1'::integer AND price IS NULL)
+      -- min_value integer CONSTRAINT test_min_value_check CHECK (min_value > 0),
+      -- max_value integer CHECK (max_value > 0) NO INHERIT,
+      -- quantity integer,
+      -- CONSTRAINT chk CHECK (quantity > 0 AND price > 0)
     );
 CheckConstraintBetween:
   compare_with_generic_parser: true
@@ -116,10 +117,16 @@ CreateViewWithCast:
     create view hoge_view as
     select amount::numeric(10,2) from hoge;
 CreateViewWithFullColumn:
+  # compare_with_generic_parser: true
   sql: |
     CREATE VIEW public.hoge_view
     AS SELECT (hoge.amount)::numeric(10,2) AS amount_num FROM hoge;
+# CreateViewWithCaseWhen2:
+#   compare_with_generic_parser: true
+#   sql: |
+#     CREATE VIEW public.hoge_view AS SELECT (hoge.amount)::numeric(10,2) AS amount_num1, (jsonb_extract_path_text(hoge.payload, VARIADIC ARRAY['amount'::text]))::numeric(10,2) AS amount_num2, ( CASE hoge.hoge_type WHEN 'hoge'::text THEN jsonb_extract_path_text(hoge.payload, VARIADIC ARRAY['hoge'::text, 'amount'::text]) ELSE NULL::text END)::numeric(10,2) AS amount_num3, to_timestamp(((jsonb_extract_path_text(hoge.payload, VARIADIC ARRAY['created'::text]))::bigint)::double precision) AS created, (to_timestamp(((jsonb_extract_path_text(hoge.payload, VARIADIC ARRAY['created'::text]))::bigint)::double precision))::date AS created_date FROM hoge;
 CreateViewWithCaseWhen:
+  # compare_with_generic_parser: true
   sql: |
     create view hoge_view as
     select

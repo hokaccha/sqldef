@@ -524,9 +524,30 @@ func (p PostgresParser) parseExpr(stmt *pgquery.Node) (parser.Expr, error) {
 		if err != nil {
 			return nil, err
 		}
-		return &parser.CollateExpr{ // compatibility with the legacy parser, but there'd be a better node
-			Expr: expr,
-		}, nil
+		columnType, err := p.parseTypeName(node.TypeCast.TypeName)
+		if err != nil {
+			return nil, err
+		}
+		if columnType.Type == "integer" || columnType.Type == "bigint" || columnType.Type == "numeric" || columnType.Type == "double precision" {
+			return &parser.CollateExpr{ // compatibility with the legacy parser, but there'd be a better node
+				Expr: expr,
+			}, nil
+		} else {
+			switch node.TypeCast.Arg.Node.(type) {
+			case *pgquery.Node_AConst:
+				return expr, nil
+			default:
+				return &parser.CastExpr{
+					Type: &parser.ConvertType{
+						Type:    columnType.Type,
+						Length:  columnType.Length,
+						Scale:   columnType.Scale,
+						Charset: columnType.Charset,
+					},
+					Expr: expr,
+				}, nil
+			}
+		}
 	case *pgquery.Node_SqlvalueFunction:
 		switch node.SqlvalueFunction.Op {
 		case pgquery.SQLValueFunctionOp_SVFOP_CURRENT_TIMESTAMP:
@@ -618,7 +639,11 @@ func (p PostgresParser) parseExpr(stmt *pgquery.Node) (parser.Expr, error) {
 // 	}
 
 // 	if collateExpr, ok := expr.(*parser.CollateExpr); ok {
-// 		return collateExpr.Expr, nil
+// 		return &parser.CastExpr{
+// 			Type: &parser.ConvertType{},
+// 			Expr: collateExpr.Expr,
+// 		}, nil
+// 		// return collateExpr.Expr, nil
 // 	}
 
 // 	return expr, nil
@@ -952,6 +977,8 @@ func (p PostgresParser) parseTypeName(node *pgquery.TypeName) (parser.ColumnType
 				columnType.Type = "integer"
 			case "int8":
 				columnType.Type = "bigint"
+			case "float8":
+				columnType.Type = "double precision"
 			case "bpchar":
 				columnType.Type = "character"
 			case "bool", "varchar", "interval", "numeric", "timestamp", "time": // TODO: use this pattern more, fixing failed tests as well
