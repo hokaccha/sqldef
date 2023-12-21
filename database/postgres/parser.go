@@ -562,11 +562,11 @@ func (p PostgresParser) parseExpr(stmt *pgquery.Node) (parser.Expr, error) {
 			pgquery.A_Expr_Kind_AEXPR_LIKE,
 			pgquery.A_Expr_Kind_AEXPR_ILIKE,
 			pgquery.A_Expr_Kind_AEXPR_SIMILAR:
-			left, err := p.parseExprAndUnwrapCollate(node.AExpr.GetLexpr())
+			left, err := p.parseExpr(node.AExpr.GetLexpr())
 			if err != nil {
 				return nil, err
 			}
-			right, err := p.parseExprAndUnwrapCollate(node.AExpr.GetRexpr())
+			right, err := p.parseExpr(node.AExpr.GetRexpr())
 			if err != nil {
 				return nil, err
 			}
@@ -580,7 +580,7 @@ func (p PostgresParser) parseExpr(stmt *pgquery.Node) (parser.Expr, error) {
 			pgquery.A_Expr_Kind_AEXPR_NOT_BETWEEN,
 			pgquery.A_Expr_Kind_AEXPR_BETWEEN_SYM,
 			pgquery.A_Expr_Kind_AEXPR_NOT_BETWEEN_SYM:
-			left, err := p.parseExprAndUnwrapCollate(node.AExpr.GetLexpr())
+			left, err := p.parseExpr(node.AExpr.GetLexpr())
 			if err != nil {
 				return nil, err
 			}
@@ -589,11 +589,11 @@ func (p PostgresParser) parseExpr(stmt *pgquery.Node) (parser.Expr, error) {
 			if !ok {
 				return nil, fmt.Errorf("unknown node in AExpr BETWEEN %#v", node)
 			}
-			from, err := p.parseExprAndUnwrapCollate(list.List.Items[0])
+			from, err := p.parseExpr(list.List.Items[0])
 			if err != nil {
 				return nil, err
 			}
-			to, err := p.parseExprAndUnwrapCollate(list.List.Items[1])
+			to, err := p.parseExpr(list.List.Items[1])
 			if err != nil {
 				return nil, err
 			}
@@ -611,18 +611,18 @@ func (p PostgresParser) parseExpr(stmt *pgquery.Node) (parser.Expr, error) {
 	}
 }
 
-func (p PostgresParser) parseExprAndUnwrapCollate(stmt *pgquery.Node) (parser.Expr, error) {
-	expr, err := p.parseExpr(stmt)
-	if err != nil {
-		return nil, err
-	}
+// func (p PostgresParser) parseExprAndUnwrapCollate(stmt *pgquery.Node) (parser.Expr, error) {
+// 	expr, err := p.parseExpr(stmt)
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	if collateExpr, ok := expr.(*parser.CollateExpr); ok {
-		return collateExpr.Expr, nil
-	}
+// 	if collateExpr, ok := expr.(*parser.CollateExpr); ok {
+// 		return collateExpr.Expr, nil
+// 	}
 
-	return expr, nil
-}
+// 	return expr, nil
+// }
 
 func (p PostgresParser) parseIndexColumn(stmt *pgquery.Node) (parser.IndexColumn, error) {
 	switch node := stmt.Node.(type) {
@@ -838,7 +838,7 @@ func (p PostgresParser) parseColumnDef(columnDef *pgquery.ColumnDef) (*parser.Co
 			}
 			columnType.Default = defaultValue
 		case pgquery.ConstrType_CONSTR_CHECK:
-			check, err := p.parseCheckConstraint(constraint.RawExpr)
+			check, err := p.parseCheckConstraint(constraint)
 			if err != nil {
 				return nil, err
 			}
@@ -1025,14 +1025,16 @@ func (p PostgresParser) parseStringList(list *pgquery.List) (string, error) {
 	return strings.Join(objects, "."), nil
 }
 
-func (p PostgresParser) parseCheckConstraint(rawExpr *pgquery.Node) (*parser.CheckDefinition, error) {
-	expr, err := p.parseExpr(rawExpr)
+func (p PostgresParser) parseCheckConstraint(constraint *pgquery.Constraint) (*parser.CheckDefinition, error) {
+	expr, err := p.parseExpr(constraint.RawExpr)
 
 	if err != nil {
 		return nil, err
 	}
 
 	return &parser.CheckDefinition{
-		Where: *parser.NewWhere(parser.WhereStr, expr),
+		Where:          *parser.NewWhere(parser.WhereStr, expr),
+		ConstraintName: parser.NewColIdent(constraint.Conname),
+		NoInherit:      parser.BoolVal(constraint.IsNoInherit),
 	}, nil
 }

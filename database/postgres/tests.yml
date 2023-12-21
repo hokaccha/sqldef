@@ -74,6 +74,8 @@ CheckConstraint:
   sql: |
     CREATE TABLE test (
       price integer CHECK (price = 0 OR NOT price <= '-1'::integer AND price IS NULL),
+      min_value integer CONSTRAINT test_min_value_check CHECK (min_value > 0),
+      max_value integer CHECK (max_value > 0) NO INHERIT,
       quantity integer,
       CONSTRAINT chk CHECK (quantity > 0 AND price > 0)
     );
