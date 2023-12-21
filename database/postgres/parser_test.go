@@ -35,6 +35,8 @@ func TestParse(t *testing.T) {
 				t.Fatal(err)
 			}
 
+			// pp.Println(genericResult)
+			// pp.Println(psqlResult)
 			assert.Equal(t, genericResult, psqlResult)
 		})
 	}

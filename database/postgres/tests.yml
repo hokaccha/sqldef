@@ -69,6 +69,40 @@ CreateTableWithNotNull:
       code varchar(512),
       booking_id bigint NOT NULL
     );
+CheckConstraint:
+  compare_with_generic_parser: true
+  sql: |
+    CREATE TABLE test (
+      price integer CHECK (price = 0 OR NOT price <= '-1'::integer AND price IS NULL),
+      quantity integer,
+      CONSTRAINT chk CHECK (quantity > 0 AND price > 0)
+    );
+CheckConstraintBetween:
+  compare_with_generic_parser: true
+  sql: |
+    CREATE TABLE test (
+      d1 date CHECK (d1 BETWEEN '1900-01-01' AND '2000-01-01'),
+      d2 date CHECK (d2 NOT BETWEEN '1900-01-01'::date AND '2000-01-01'::date)
+    );
+CheckConstraintPosixRegex:
+  compare_with_generic_parser: true
+  sql: |
+    CREATE TABLE test (
+      posix_regex        text NOT NULL CHECK (posix_regex        ~   '[0-9]'),
+      posix_regex_ci     text NOT NULL CHECK (posix_regex_ci     ~*  '[0-9]'),
+      posix_not_regex    text NOT NULL CHECK (posix_not_regex    !~  '[0-9]'),
+      posix_not_regex_ci text NOT NULL CHECK (posix_not_regex_ci !~* '[0-9]')
+    );
+CheckConstraintWithoutCompare:
+  sql: |
+    CREATE TABLE test (
+      t1 text CHECK (t1 like 'x'),
+      t2 text CHECK (t2 not like 'x'),
+      t3 text CHECK (t3 similar to 'x'),
+      t4 text CHECK (t4 <> ''::text),
+      d3 date CHECK (d3 BETWEEN SYMMETRIC '1900-01-01' AND '2000-01-01'),
+      d4 date CHECK (d4 NOT BETWEEN SYMMETRIC '1900-01-01'::date AND '2000-01-01'::date)
+    );
 CreateView:
   compare_with_generic_parser: true
   sql: |
