@@ -212,17 +212,57 @@ NumericChangePrecisionAndScale:
     );
   output: |
     ALTER TABLE "public"."test" ALTER COLUMN "num" TYPE numeric(10, 2);
-CheckTypeCast:
+CheckConstraint:
   current: |
     CREATE TABLE test (
-      v varchar(10) NOT NULL
+      n1 integer,
+      n2 integer,
+      n3 integer,
+      t1 text,
+      t2 text,
+      t4 text,
+      t5 varchar(10),
+      -- d1 date,
+      -- d2 date
+      d3 date
     );
   desired: |
     CREATE TABLE test (
-      v varchar(10) NOT NULL CHECK (v::text ~ '[0-9]')
+      n1 integer CHECK (n1 = 0 or not n1 > 10 and n1 IS NOT NULL),
+      n2 integer CONSTRAINT chk CHECK (n2 > 0),
+      n3 integer CHECK (n3 > 0) NO INHERIT,
+      t1 text CHECK (t1 like 'x'),
+      t2 text CHECK (t2 not like 'x'),
+      t4 text CHECK (t4 <> ''::text),
+      t5 varchar(10) CHECK (t5::text ~ '[0-9]'),
+      -- d1 date CHECK (d1 BETWEEN SYMMETRIC '1900-01-01' AND '2000-01-01'),
+      -- d2 date CHECK (d2 NOT BETWEEN SYMMETRIC '1900-01-01'::date AND '2000-01-01'::date)
+      d3 date CHECK (d3 >= '2022-01-01'::date)
+      -- t3 text CHECK (t3 similar to 'x'),
+      -- a1 integer CHECK (n1 = ANY (ARRAY[1, 2])),
+      -- a2 integer CHECK (n2 = ALL (ARRAY[1, 2]))
     );
   output: |
-    ALTER TABLE "public"."test" ADD CONSTRAINT test_v_check CHECK (v::text ~ '[0-9]');
+    ALTER TABLE "public"."test" ADD CONSTRAINT test_n1_check CHECK (n1 = 0 or not n1 > 10 and n1 IS NOT NULL);
+    ALTER TABLE "public"."test" ADD CONSTRAINT chk CHECK (n2 > 0);
+    ALTER TABLE "public"."test" ADD CONSTRAINT test_n3_check CHECK (n3 > 0) NO INHERIT;
+    ALTER TABLE "public"."test" ADD CONSTRAINT test_t1_check CHECK (t1 ~~ 'x');
+    ALTER TABLE "public"."test" ADD CONSTRAINT test_t2_check CHECK (t2 !~~ 'x');
+    ALTER TABLE "public"."test" ADD CONSTRAINT test_t4_check CHECK (t4 <> '');
+    ALTER TABLE "public"."test" ADD CONSTRAINT test_t5_check CHECK (t5::text ~ '[0-9]');
+    ALTER TABLE "public"."test" ADD CONSTRAINT test_d3_check CHECK (d3 >= '2022-01-01');
+CheckConstraintTest:
+  current: |
+    CREATE TABLE test (
+      n1 integer
+    );
+  desired: |
+    CREATE TABLE test (
+      n1 integer CHECK (n1 = ANY (ARRAY[1, 2]))
+    );
+  output: |
+    ALTER TABLE "public"."test" ADD CONSTRAINT test_n1_check CHECK (n1 = ANY (ARRAY[1, 2]));
+
 CompositeForeignKeyConstraint:
   current: |
     CREATE TABLE t1 (

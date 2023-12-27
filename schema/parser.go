@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/k0kubun/pp/v3"
 	"github.com/sqldef/sqldef/database"
 	"github.com/sqldef/sqldef/parser"
 )
@@ -125,6 +126,7 @@ func parseTable(mode GeneratorMode, stmt *parser.DDL, defaultSchema string) (Tab
 			generated:     parseGenerated(parsedCol.Type.Generated),
 		}
 		if parsedCol.Type.Check != nil {
+			pp.Println(parsedCol.Type.Check.Where.Expr)
 			column.check = &CheckDefinition{
 				definition:        parser.String(parsedCol.Type.Check.Where.Expr),
 				constraintName:    parser.String(parsedCol.Type.Check.ConstraintName),
