@@ -35,48 +35,10 @@ func TestParse(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			// pp.Println(genericResult)
-			// pp.Println(psqlResult)
 			assert.Equal(t, genericResult, psqlResult)
 		})
 	}
 }
-
-// func TestOfTest(t *testing.T) {
-// 	tests, err := readTests("tests.yml")
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	}
-
-// 	sql1 := tests["CreateViewWithCaseWhen"].SQL
-// 	sql2 := tests["CreateViewWithCaseWhen2"].SQL
-
-// 	postgresParser := NewParser()
-// 	postgresParser.testing = true
-
-// 	// genericParser := database.NewParser(parser.ParserModePostgres)
-// 	// g1, err := genericParser.Parse(sql1)
-// 	// if err != nil {
-// 	// 	t.Fatal(err)
-// 	// }
-// 	// g2, err := genericParser.Parse(sql2)
-// 	// if err != nil {
-// 	// 	t.Fatal(err)
-// 	// }
-// 	// pp.Println("generic")
-// 	// assert.Equal(t, g1, g2)
-
-// 	p1, err := postgresParser.Parse(sql1)
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	}
-// 	p2, err := postgresParser.Parse(sql2)
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	}
-// 	pp.Println("postgres")
-// 	assert.Equal(t, p1[0].Statement, p2[0].Statement)
-// }
 
 type TestCase struct {
 	SQL                      string
